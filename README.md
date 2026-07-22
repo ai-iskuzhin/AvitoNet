@@ -63,14 +63,14 @@ Register your public URL (do this once per account, e.g. at provisioning time):
 await avito.SubscribeWebhookAsync("https://api.example.com/webhooks/avito/<inbox>");
 ```
 
-Avito then `POST`s new-message events to that URL. Parse and (optionally) verify them:
+> **Your endpoint must answer `200 OK` within 2 seconds** or Avito won't keep the subscription
+> (`curl --connect-timeout 2 <url> -d '{}'`). **ACK immediately and process asynchronously.** Serve it on an
+> **unguessable, per-account URL** — that's the primary protection.
+
+Avito then `POST`s new-message events to that URL. Parse them:
 
 ```csharp
 byte[] body = await ReadRequestBodyAsync();
-string? signature = request.Headers["x-avito-messenger-signature"];
-
-if (!AvitoWebhook.VerifySignature(body, signature, webhookSecret))
-    return Results.Unauthorized();
 
 AvitoWebhookUpdate? update = AvitoWebhook.Parse(body);
 var msg = update?.Payload?.Value;
@@ -78,11 +78,20 @@ if (msg is { Type: AvitoMessageType.Text } && !msg.IsOutgoing)
 {
     // inbound text from the customer: msg.ChatId, msg.AuthorId, msg.Content!.Text
 }
+
+// Return 200 now; do the work above off the request path.
 ```
 
 `IsOutgoing` is true when the event echoes a message your own account sent (author == receiver) — handy for ignoring your own sends.
 
-> **Signature note:** Avito signs deliveries with the `x-avito-messenger-signature` header; the exact key/encoding isn't fully published, so `VerifySignature` assumes hex HMAC-SHA256 over the raw body. Confirm the scheme against the current docs before relying on it as your only check, and always serve the webhook on an unguessable per-account URL.
+> **Signature (optional):** Avito's public webhook docs describe only the 2s/200 reachability check and don't
+> document a delivery signature. If your account *does* receive an `x-avito-messenger-signature` header,
+> `AvitoWebhook.VerifySignature(body, header, secret)` checks it as hex HMAC-SHA256 over the raw body — confirm
+> the scheme first, and verify only when the header is present:
+> ```csharp
+> if (!string.IsNullOrEmpty(signature) && !AvitoWebhook.VerifySignature(body, signature, secret))
+>     return Results.Unauthorized();
+> ```
 
 ## What's covered
 

@@ -22,10 +22,11 @@ public static class AvitoWebhook
     /// keyed by <paramref name="secret"/> (hex-encoded), with a constant-time comparison.
     /// </summary>
     /// <remarks>
-    /// Avito signs webhook deliveries with this header; the exact key/encoding is not fully published, so
-    /// confirm the scheme against the current Avito docs before relying on it as your sole check. Defense in
-    /// depth: also serve the webhook on an unguessable, per-inbox URL. <see cref="ComputeSignature"/> exposes
-    /// the raw computation if a different encoding is required.
+    /// Avito's public webhook docs describe only the "reachable + 200 within 2s" check and do not document a
+    /// delivery signature, so treat this as optional: verify only when the header is actually present, and rely
+    /// primarily on an unguessable per-account webhook URL. The exact key/encoding isn't published — confirm the
+    /// scheme before depending on it. <see cref="ComputeSignature"/> exposes the raw computation if a different
+    /// encoding is required.
     /// </remarks>
     public static bool VerifySignature(ReadOnlySpan<byte> body, string? signatureHeader, string secret)
     {
