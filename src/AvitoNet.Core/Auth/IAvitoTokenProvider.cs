@@ -1,4 +1,4 @@
-namespace AvitoNet.Messenger.Auth;
+namespace AvitoNet.Auth;
 
 /// <summary>Supplies (and caches) OAuth2 access tokens for a set of Avito credentials.</summary>
 public interface IAvitoTokenProvider

@@ -15,7 +15,7 @@
     <PackageId>AvitoNet.Messenger</PackageId>
     <Version>0.1.0</Version>
     <Authors>ai-iskuzhin</Authors>
-    <Description>A System.Text.Json-native .NET client for the Avito Messenger API: OAuth2 client_credentials auth (per-account, cached), chats/messages read + send, and typed webhook parsing with signature verification.</Description>
+    <Description>A System.Text.Json-native .NET client for the Avito Messenger API: chats/messages read + send, image upload, and typed webhook parsing. Shares OAuth2 client_credentials auth (per-account, cached) with the AvitoNet SDK family via AvitoNet.Core.</Description>
     <PackageTags>avito;messenger;chat;api;sdk;client</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -30,7 +30,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="\" />
+    <ProjectReference Include="../AvitoNet.Core/AvitoNet.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

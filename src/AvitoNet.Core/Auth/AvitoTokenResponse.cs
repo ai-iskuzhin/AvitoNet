@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace AvitoNet.Messenger.Auth;
+namespace AvitoNet.Auth;
 
 internal sealed class AvitoTokenResponse
 {

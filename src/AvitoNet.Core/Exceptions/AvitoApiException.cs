@@ -1,4 +1,4 @@
-namespace AvitoNet.Messenger;
+namespace AvitoNet;
 
 /// <summary>Thrown when the Avito API returns a non-success response.</summary>
 public class AvitoApiException : Exception
@@ -6,17 +6,21 @@ public class AvitoApiException : Exception
     /// <summary>HTTP status code of the failed response.</summary>
     public int StatusCode { get; }
 
-    /// <summary>Avito's <c>error.code</c> from the response body, if present.</summary>
+    /// <summary>Avito's numeric <c>error.code</c> from the response body, when it is an integer.</summary>
     public int? ErrorCode { get; }
+
+    /// <summary>Avito's <c>error.code</c> as text — some APIs return a string code such as <c>"validation"</c>.</summary>
+    public string? ErrorCodeText { get; }
 
     /// <summary>The raw response body, if any.</summary>
     public string? ResponseBody { get; }
 
-    public AvitoApiException(int statusCode, int? errorCode, string message, string? responseBody)
+    public AvitoApiException(int statusCode, int? errorCode, string message, string? responseBody, string? errorCodeText = null)
         : base(message)
     {
         StatusCode = statusCode;
         ErrorCode = errorCode;
+        ErrorCodeText = errorCodeText;
         ResponseBody = responseBody;
     }
 }

@@ -1,28 +1,17 @@
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using AvitoNet.Messenger.Auth;
+using AvitoNet.Auth;
 using AvitoNet.Messenger.Models;
 
 namespace AvitoNet.Messenger;
 
 /// <summary>Default <see cref="IAvitoMessengerClient"/>. Construct via <see cref="IAvitoMessengerClientFactory"/>.</summary>
-public sealed class AvitoMessengerClient : IAvitoMessengerClient
+public sealed class AvitoMessengerClient : AvitoApiClientBase, IAvitoMessengerClient
 {
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-
-    private readonly HttpClient _http;
-    private readonly AvitoCredentials _credentials;
-    private readonly IAvitoTokenProvider _tokens;
-    private readonly AvitoMessengerOptions _options;
-
-    public AvitoMessengerClient(HttpClient http, AvitoCredentials credentials, IAvitoTokenProvider tokens, AvitoMessengerOptions options)
+    public AvitoMessengerClient(HttpClient http, AvitoCredentials credentials, IAvitoTokenProvider tokens, AvitoClientOptions options)
+        : base(http, credentials, tokens, options)
     {
-        _http = http;
-        _credentials = credentials;
-        _tokens = tokens;
-        _options = options;
     }
 
     public Task<AvitoAccount> GetSelfAsync(CancellationToken cancellationToken = default) =>
@@ -100,78 +89,6 @@ public sealed class AvitoMessengerClient : IAvitoMessengerClient
 
     public Task<AvitoSubscriptionList> GetSubscriptionsAsync(CancellationToken cancellationToken = default) =>
         RequestJsonAsync<AvitoSubscriptionList>(HttpMethod.Post, "/messenger/v1/subscriptions", null, cancellationToken);
-
-    // ---- transport ----
-
-    private async Task<T> RequestJsonAsync<T>(HttpMethod method, string path, object? body, CancellationToken ct)
-    {
-        var content = body switch
-        {
-            null => null,
-            HttpContent http => http,
-            _ => JsonContent.Create(body, body.GetType(), options: Json),
-        };
-        using var response = await SendCoreAsync(method, path, content, ct).ConfigureAwait(false);
-        var value = await response.Content.ReadFromJsonAsync<T>(Json, ct).ConfigureAwait(false);
-        return value ?? throw new AvitoApiException((int)response.StatusCode, null, "Avito returned an empty response body.", null);
-    }
-
-    private async Task SendAsync(HttpMethod method, string path, object? body, CancellationToken ct)
-    {
-        var content = body is null ? null : JsonContent.Create(body, body.GetType(), options: Json);
-        using var _ = await SendCoreAsync(method, path, content, ct).ConfigureAwait(false);
-    }
-
-    private async Task<HttpResponseMessage> SendCoreAsync(HttpMethod method, string path, HttpContent? content, CancellationToken ct)
-    {
-        var token = await _tokens.GetAccessTokenAsync(_credentials, ct).ConfigureAwait(false);
-        using var request = new HttpRequestMessage(method, new Uri(_options.BaseAddress, path)) { Content = content };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var response = await _http.SendAsync(request, ct).ConfigureAwait(false);
-        if (!response.IsSuccessStatusCode)
-        {
-            try
-            {
-                await ThrowApiExceptionAsync(response, ct).ConfigureAwait(false);
-            }
-            finally
-            {
-                response.Dispose();
-            }
-        }
-        return response;
-    }
-
-    private static async Task ThrowApiExceptionAsync(HttpResponseMessage response, CancellationToken ct)
-    {
-        var status = (int)response.StatusCode;
-        var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-        int? code = null;
-        var message = $"Avito API request failed with status {status}.";
-        try
-        {
-            using var doc = JsonDocument.Parse(body);
-            if (doc.RootElement.TryGetProperty("error", out var error))
-            {
-                if (error.TryGetProperty("code", out var c) && c.TryGetInt32(out var ci))
-                {
-                    code = ci;
-                }
-                if (error.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.String)
-                {
-                    message = m.GetString()!;
-                }
-            }
-        }
-        catch (JsonException)
-        {
-            // non-JSON error body; keep the generic message
-        }
-        throw new AvitoApiException(status, code, message, body);
-    }
-
-    private static string Esc(string value) => Uri.EscapeDataString(value);
 }
 
 // Request bodies (explicit snake_case names, independent of the serializer's naming policy).

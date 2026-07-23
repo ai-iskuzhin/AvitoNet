@@ -1,7 +1,7 @@
-namespace AvitoNet.Messenger;
+namespace AvitoNet;
 
-/// <summary>Configuration for the Avito Messenger client.</summary>
-public sealed class AvitoMessengerOptions
+/// <summary>Transport-level configuration shared by every AvitoNet client (host, token endpoint, timeouts).</summary>
+public class AvitoClientOptions
 {
     /// <summary>API base address. Defaults to the production host.</summary>
     public Uri BaseAddress { get; set; } = new("https://api.avito.ru");

@@ -1,25 +1,22 @@
 using System.Collections.Concurrent;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Microsoft.Extensions.Options;
 
-namespace AvitoNet.Messenger.Auth;
+namespace AvitoNet.Auth;
 
 /// <summary>
 /// OAuth2 <c>client_credentials</c> token provider. Tokens are cached per <c>client_id</c> and refreshed a
 /// little before expiry; concurrent callers for the same account share a single token fetch. Thread-safe and
-/// safe to register as a singleton.
+/// safe to register as a singleton — one instance backs every AvitoNet client.
 /// </summary>
 public sealed class ClientCredentialsTokenProvider : IAvitoTokenProvider
 {
-    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
-
     private readonly HttpClient _http;
-    private readonly AvitoMessengerOptions _options;
+    private readonly AvitoClientOptions _options;
     private readonly ConcurrentDictionary<string, CachedToken> _cache = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new(StringComparer.Ordinal);
 
-    public ClientCredentialsTokenProvider(HttpClient http, IOptions<AvitoMessengerOptions> options)
+    public ClientCredentialsTokenProvider(HttpClient http, IOptions<AvitoClientOptions> options)
     {
         _http = http;
         _options = options.Value;
@@ -80,7 +77,7 @@ public sealed class ClientCredentialsTokenProvider : IAvitoTokenProvider
                 $"Avito token request failed with status {(int)response.StatusCode}.", body);
         }
 
-        var token = await response.Content.ReadFromJsonAsync<AvitoTokenResponse>(Json, cancellationToken).ConfigureAwait(false);
+        var token = await response.Content.ReadFromJsonAsync<AvitoTokenResponse>(AvitoJson.Web, cancellationToken).ConfigureAwait(false);
         if (token is null || string.IsNullOrEmpty(token.AccessToken))
         {
             throw new AvitoAuthException((int)response.StatusCode, "Avito token response contained no access_token.", null);

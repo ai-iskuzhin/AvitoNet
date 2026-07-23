@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="src/AvitoNet.Messenger/AvitoNet.Messenger.csproj" />
-  <Project Path="tests/AvitoNet.Messenger.Tests/AvitoNet.Messenger.Tests.csproj" />
-</Solution>

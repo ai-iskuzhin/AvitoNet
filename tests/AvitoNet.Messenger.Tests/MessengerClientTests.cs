@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using AvitoNet.Messenger.Auth;
+using AvitoNet.Auth;
 using AvitoNet.Messenger.Models;
 
 namespace AvitoNet.Messenger.Tests;
@@ -14,7 +14,7 @@ public class MessengerClientTests
     }
 
     private static AvitoMessengerClient Client(FakeHttpMessageHandler handler) =>
-        new(new HttpClient(handler), new AvitoCredentials("id", "secret"), new FixedTokenProvider(), new AvitoMessengerOptions());
+        new(new HttpClient(handler), new AvitoCredentials("id", "secret"), new FixedTokenProvider(), new AvitoClientOptions());
 
     [Fact]
     public async Task SendTextAsync_posts_the_right_path_body_and_bearer()

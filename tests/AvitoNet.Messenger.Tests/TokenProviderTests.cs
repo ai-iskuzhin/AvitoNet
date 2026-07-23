@@ -1,5 +1,5 @@
 using System.Net;
-using AvitoNet.Messenger.Auth;
+using AvitoNet.Auth;
 using Microsoft.Extensions.Options;
 
 namespace AvitoNet.Messenger.Tests;
@@ -7,7 +7,7 @@ namespace AvitoNet.Messenger.Tests;
 public class TokenProviderTests
 {
     private static ClientCredentialsTokenProvider Provider(FakeHttpMessageHandler handler) =>
-        new(new HttpClient(handler), Options.Create(new AvitoMessengerOptions()));
+        new(new HttpClient(handler), Options.Create(new AvitoClientOptions()));
 
     [Fact]
     public async Task Fetches_then_caches_the_token_per_client_id()
