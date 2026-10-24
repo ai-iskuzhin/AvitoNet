@@ -1,6 +1,6 @@
 # AvitoNet
 
-[Русский](README.md) · **English**
+[Русский](https://github.com/ai-iskuzhin/AvitoNet/blob/main/README.md) · **English**
 
 A .NET client for [Avito's API for business](https://www.avito.ru/developers): **Messenger** (chats, messages,
 images, voice, blacklist, webhooks) and **Ratings & Reviews**. System.Text.Json-native, DI-friendly, mockable,

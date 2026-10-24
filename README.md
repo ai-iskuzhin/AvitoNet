@@ -1,6 +1,6 @@
 # AvitoNet
 
-**Русский** · [English](README.en.md)
+**Русский** · [English](https://github.com/ai-iskuzhin/AvitoNet/blob/main/README.en.md)
 
 .NET-клиент для [API Авито для бизнеса](https://www.avito.ru/developers). Поддерживает **Мессенджер** (чаты,
 сообщения, изображения, голосовые, чёрный список, вебхуки) и **Рейтинги и отзывы**. Сериализация на
