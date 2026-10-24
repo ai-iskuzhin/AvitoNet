@@ -1,7 +1,4 @@
 <Solution>
-  <Project Path="src/AvitoNet.Core/AvitoNet.Core.csproj" />
-  <Project Path="src/AvitoNet.Messenger/AvitoNet.Messenger.csproj" />
-  <Project Path="src/AvitoNet.Reviews/AvitoNet.Reviews.csproj" />
-  <Project Path="tests/AvitoNet.Messenger.Tests/AvitoNet.Messenger.Tests.csproj" />
-  <Project Path="tests/AvitoNet.Reviews.Tests/AvitoNet.Reviews.Tests.csproj" />
+  <Project Path="src/AvitoNet/AvitoNet.csproj" />
+  <Project Path="tests/AvitoNet.Tests/AvitoNet.Tests.csproj" />
 </Solution>
