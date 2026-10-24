@@ -2,26 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- Don't require an XML doc comment on every public member (DTO properties are self-describing). -->
     <NoWarn>$(NoWarn);CS1591</NoWarn>
-  </PropertyGroup>
-
-  <PropertyGroup Label="Package">
     <PackageId>AvitoNet</PackageId>
-    <Version>0.2.0</Version>
-    <Authors>ai-iskuzhin</Authors>
     <Description>A System.Text.Json-native .NET client for Avito's API for business: Messenger (chats, messages, images, voice, blacklist, webhooks) and Ratings &amp; Reviews. OAuth2 client_credentials and authorization_code (partner apps) with a shared per-account token cache. DI-friendly, mockable, multi-account.</Description>
-    <PackageTags>avito;авито;messenger;chat;reviews;api;sdk;client;oauth2</PackageTags>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryType>git</RepositoryType>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
   <ItemGroup>
