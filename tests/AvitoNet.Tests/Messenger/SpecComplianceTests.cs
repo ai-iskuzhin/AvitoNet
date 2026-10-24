@@ -8,7 +8,7 @@ using AvitoNet.Messenger.Webhooks;
 
 namespace AvitoNet.Tests.Messenger;
 
-// 0.2.0 behaviour, pinned against Avito's live OpenAPI spec (www.avito.ru/web/1/openapi/info/messenger, 2026-10-24).
+// Behaviour pinned against Avito's live OpenAPI spec (www.avito.ru/web/1/openapi/info/messenger, 2026-10-24).
 public class SpecComplianceTests
 {
     private sealed class CountingTokenSource : IAvitoTokenSource
