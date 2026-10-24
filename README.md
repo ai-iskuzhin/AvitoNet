@@ -1,63 +1,70 @@
 # AvitoNet
 
-A .NET client for [Avito's API for business](https://www.avito.ru/developers): **Messenger** (chats, messages,
-images, voice, blacklist, webhooks) and **Ratings & Reviews**. System.Text.Json-native, DI-friendly, mockable,
-built for many accounts at once.
+**Русский** · [English](README.en.md)
+
+.NET-клиент для [API Авито для бизнеса](https://www.avito.ru/developers). Поддерживает **Мессенджер** (чаты,
+сообщения, изображения, голосовые, чёрный список, вебхуки) и **Рейтинги и отзывы**. Сериализация на
+System.Text.Json, регистрация через DI, клиенты легко подменить в тестах, работа с многими аккаунтами
+одновременно.
 
 ```
 dotnet add package AvitoNet
 ```
 
-Targets `net8.0`. MIT licensed. One package, one version: every API surface shares the account's token.
+Целевая платформа — `net8.0`. Лицензия MIT. Один пакет и одна версия: все разделы API используют общий токен
+аккаунта.
 
-## Before you start: what Avito requires
+## Что требует Авито
 
-- **A subscription that includes the Messenger API.** That's «Максимальная» for Товары and Работа, or «Расширенная»
-  and above for Услуги. Without it most calls return **402**, surfaced as `AvitoSubscriptionRequiredException`.
-- **The company's main account.** Keys or tokens of an employee sub-account fail on most chat operations.
-- **No starting conversations.** Avito has no "create chat" call; you can only answer in an existing chat.
-- **Text replies are at most 1000 characters.** `AvitoText.Split` cuts longer text on natural boundaries.
+- **Подписка с доступом к API мессенджера.** Для «Товаров» и «Работы» нужна «Максимальная», для «Услуг» —
+  «Расширенная» или выше. Без неё большинство запросов возвращает **402**: SDK выбрасывает
+  `AvitoSubscriptionRequiredException`.
+- **Основной аккаунт компании.** С ключами или токенами аккаунта сотрудника большинство операций с чатами не
+  работает.
+- **Первым написать нельзя.** В API Авито нет метода «создать чат»: можно только отвечать в существующем.
+- **Текстовое сообщение — не длиннее 1000 символов.** `AvitoText.Split` разбивает длинный текст по абзацам,
+  строкам, предложениям и словам.
 
-## Register
+## Регистрация
 
 ```csharp
-services.AddAvito();   // optional: AddAvito(o => o.Timeout = TimeSpan.FromSeconds(15));
+services.AddAvito();   // при необходимости: AddAvito(o => o.Timeout = TimeSpan.FromSeconds(15));
 ```
 
-That registers `IAvitoClientFactory`, `IAvitoOAuthClient` and the named `HttpClient` `AvitoHttp.ClientName`. Add
-handlers to that client, such as a proxy or logging, with `services.AddHttpClient(AvitoHttp.ClientName)`.
+Регистрируются `IAvitoClientFactory`, `IAvitoOAuthClient` и именованный `HttpClient` `AvitoHttp.ClientName`.
+Обработчики (прокси, логирование) добавляются через `services.AddHttpClient(AvitoHttp.ClientName)`.
 
-## Authorize an account
+## Авторизация аккаунта
 
-**Account keys (`client_credentials`).** The account owner creates a Client ID and Client Secret under
-«Для профессионалов» → «API». Tokens (24 h) are fetched and cached per `client_id`:
+**Ключи аккаунта (`client_credentials`).** Владелец аккаунта создаёт Client ID и Client Secret в разделе
+«Для профессионалов» → «API». Токены живут 24 часа; SDK получает их сам и кэширует по `client_id`:
 
 ```csharp
 IAvitoClient avito = factory.Create(new AvitoCredentials(clientId, clientSecret));
 ```
 
-**Partner app (`authorization_code`).** "Войти через Авито". Avito registers apps for this flow for trusted
-partners only.
+**Партнёрское приложение (`authorization_code`).** Это кнопка «Войти через Авито». Такие приложения Авито пока
+регистрирует только для доверенных партнёров.
 
 ```csharp
-// 1. Send the user to Avito (verify `state` when they come back to your registered redirect URI).
+// 1. Отправьте пользователя на страницу Авито. Когда он вернётся на зарегистрированный redirect URI, проверьте `state`.
 Uri url = oauth.BuildAuthorizeUrl(app.ClientId, ["messenger:read", "messenger:write", "user:read"], state);
 
-// 2. Exchange the code, store the tokens.
+// 2. Обменяйте код на токены и сохраните их.
 AvitoTokenSet tokens = await oauth.ExchangeCodeAsync(app, code);
 
-// 3. Use them. Every refresh returns a NEW refresh token -- persist it in the callback.
+// 3. Используйте токены. Каждое обновление выдаёт НОВЫЙ refresh-токен; сохраняйте его в колбэке.
 var source = new AvitoUserTokenSource(oauth, app, tokens, (fresh, ct) => store.SaveAsync(accountId, fresh, ct));
 IAvitoClient avito = factory.Create(source);
 ```
 
-Bring your own token storage by implementing `IAvitoTokenSource`. If Avito rejects a token (401/403), it's
-invalidated and the request retried once with a fresh one.
+Чтобы хранить токены по-своему, реализуйте `IAvitoTokenSource`. Если Авито отклоняет токен (401/403), SDK
+сбрасывает его и один раз повторяет запрос с новым.
 
-## Messenger
+## Мессенджер
 
 ```csharp
-var me = await avito.Messenger.GetSelfAsync();   // me.Id is the user_id every messenger call needs
+var me = await avito.Messenger.GetSelfAsync();   // me.Id — это user_id, который нужен всем методам мессенджера
 
 var chats = await avito.Messenger.GetChatsAsync(me.Id, new AvitoChatQuery { UnreadOnly = true, ChatTypes = ["u2i", "u2u"] });
 foreach (var chat in chats.Chats)
@@ -71,41 +78,48 @@ foreach (var chat in chats.Chats)
     await avito.Messenger.MarkChatReadAsync(me.Id, chat.Id);
 }
 
-await using var photo = File.OpenRead("photo.jpg");       // JPEG/PNG/HEIC/GIF/BMP, ≤ 24 MB
+await using var photo = File.OpenRead("photo.jpg");       // JPEG/PNG/HEIC/GIF/BMP, до 24 МБ
 var imageId = await avito.Messenger.UploadImageAsync(me.Id, photo, "photo.jpg", "image/jpeg");
 await avito.Messenger.SendImageAsync(me.Id, chatId, imageId);
 ```
 
-`GetChatsAsync` returns only listing chats (`u2i`) by default; pass `ChatTypes` for profile chats (`u2u`) too.
-Also available: `GetChatAsync`, `DeleteMessageAsync` (your own message, within 1 hour), `GetVoiceFilesAsync`
-(playable links, valid for 1 hour), `BlacklistAsync`.
+По умолчанию `GetChatsAsync` возвращает только чаты по объявлениям (`u2i`). Чтобы получить и чаты по профилю
+(`u2u`), передайте `ChatTypes`.
 
-### Webhooks
+Ещё доступны:
+- `GetChatAsync`;
+- `DeleteMessageAsync` — своё сообщение, в течение часа после отправки;
+- `GetVoiceFilesAsync` — ссылки на голосовые, действуют 1 час;
+- `BlacklistAsync`.
+
+### Вебхуки
 
 ```csharp
-await avito.Messenger.SubscribeWebhookAsync("https://api.example.com/webhooks/avito/<unguessable-per-account-id>");
+await avito.Messenger.SubscribeWebhookAsync("https://api.example.com/webhooks/avito/<непредсказуемый-id-аккаунта>");
 ```
 
-**Answer `200 OK` within 2 seconds**, or Avito drops the subscription. Avito checks the URL by posting `{}`.
-ACK first and process afterwards:
+**Отвечайте `200 OK` в течение 2 секунд**, иначе Авито отключит подписку. Доступность адреса Авито проверяет
+запросом с телом `{}`. Сначала подтвердите получение, потом обрабатывайте:
 
 ```csharp
-var update = AvitoWebhook.TryParse(body);              // never throws; null for non-JSON
+var update = AvitoWebhook.TryParse(body);              // никогда не бросает исключение; null, если это не JSON
 if (update is null || update.IsProbe) return Results.Ok();
 
 var msg = update.Payload!.Value!;
-if (!msg.IsOutgoing)                                   // skip echoes of your own sends
+if (!msg.IsOutgoing)                                   // пропускаем эхо собственных сообщений
 {
     queue.Enqueue(msg);                                // msg.ChatId, msg.AuthorId, msg.Type, msg.Content, msg.ItemId…
 }
 return Results.Ok();
 ```
 
-Avito doesn't document a delivery signature or a retry policy. Protect the endpoint with an unguessable per-account
-URL, and poll `GetChatsAsync(UnreadOnly)` as a safety net. If your deliveries carry `x-avito-messenger-signature`,
-`AvitoWebhook.VerifySignature` checks it as hex HMAC-SHA256. That scheme is unconfirmed, so don't depend on it.
+Авито не документирует ни подпись доставки, ни политику повторных отправок.
+- **Защита эндпоинта:** непредсказуемый URL для каждого аккаунта.
+- **Подстраховка:** периодический опрос `GetChatsAsync(UnreadOnly)`.
+- **Подпись:** если в запросах приходит `x-avito-messenger-signature`, её можно проверить через
+  `AvitoWebhook.VerifySignature` (hex HMAC-SHA256). Схема не подтверждена, поэтому полагаться на неё не стоит.
 
-## Ratings & Reviews
+## Рейтинги и отзывы
 
 ```csharp
 var rating = await avito.Reviews.GetRatingInfoAsync();
@@ -116,22 +130,22 @@ foreach (var review in page.Reviews.Where(r => r.CanAnswer && r.Answer is null))
 }
 ```
 
-## Errors
+## Ошибки
 
-| Exception | When |
+| Исключение | Когда |
 |---|---|
-| `AvitoApiException` | Any non-success response. Carries `StatusCode`, `ErrorCode` / `ErrorCodeText` and `ResponseBody`. |
-| `AvitoAuthException` | The token endpoint refused (bad keys, invalid code or refresh token). |
-| `AvitoSubscriptionRequiredException` | 402: the account's tariff doesn't include this API. Not a credentials problem. |
-| `AvitoRateLimitException` | 429, with `RetryAfter` when Avito sends it. |
+| `AvitoApiException` | Любой неуспешный ответ. Содержит `StatusCode`, `ErrorCode` / `ErrorCodeText` и `ResponseBody`. |
+| `AvitoAuthException` | Сервер токенов отказал: неверные ключи, недействительный код или refresh-токен. |
+| `AvitoSubscriptionRequiredException` | 402: тариф аккаунта не включает этот API. Ключи здесь ни при чём. |
+| `AvitoRateLimitException` | 429; в `RetryAfter` — пауза, если Авито её указал. |
 
-## Build & test
+## Сборка и тесты
 
 ```
 dotnet build AvitoNet.slnx
 dotnet test  AvitoNet.slnx
 ```
 
-## License
+## Лицензия
 
 MIT.

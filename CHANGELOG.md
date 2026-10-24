@@ -8,7 +8,9 @@ Avito's published OpenAPI specification, not a live account.
 
 ## Unreleased
 
-No changes yet.
+### Changed
+
+- README is now Russian first (`README.md`, also the NuGet readme), with the English version in `README.en.md`.
 
 ## 0.1.0-preview.1
 
